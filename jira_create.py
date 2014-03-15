@@ -4,25 +4,39 @@ import json
 import os
 import subprocess
 
+class JiraDataJson:
+	def __init__(self):
+		pass
+	def add_braces(self, data):
+		return '{' + data + '}'
+	def add_key_value(self, key, value):
+		return '"' + key + '" : ' + value
+	def generate_create_issue_json(self, project, summary, description, issue_type):
+		project_json = add_key_value('project', add_braces(add_key_value('key', project)))
+		summary_json = add_key_value('summary', summary)
+		description_json = add_key_value('description', description)
+		issuetype_json = add_key_value('issuetype', add_braces('name', issue_type))
+		fields_json = add_braces(project_json+','+summary_json+','+description_json+','+issuetype_json)
+		return add_braces(add_key_value('fields', fields_json))
+
 class JiraControl:
     def __init__(self, my_name = '', my_pass = ''):
         self.username, self.password = my_name, my_pass
         self.jira_rest_api_url = 'xxx' # set jira api url
+    def get_gira_issue_list(self):
+        return ['bug', 'new feature', 'task', 'improvement']
     def query_issue(self, issue):
 		# TODO : myabe find "curl" command from /usr/bin/env too ?
         command = 'curl -D- -u ' + self.username + ':' + self.password + ' -X GET -H "Content-Type: application/json" "' +self.jira_rest_api_url + 'issue/' + issue + '"'
         command_result = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0].strip().split("\n")
         n = command_result.index('\r')
         return command_result[n+1:]
-    def print_all(self):
-        print self.username + ' ' + self.password
-    def get_gira_issue_list(self):
-        return ['bug', 'new feature', 'task', 'improvement']
-    def generate_create_issue_json(self, project, summary, description, issue_type):
-        summary_json = "'summary':'"+summary+"'"
-        description_json = "'description':'"+description+"'"
-        issue_json = "'issuetype':{'name':'"+issue_type+"'}" 
-
+	def generate_create_issue_json(self, project, summary, description, issue_type):
+		return JiraDataJson.generate_create_issue_json(project, summary, description, issue_type)
+	def create_issue(self, issue_json):
+		command = 'curl -D- -u ' + self.username + ':' + self.password + ' -X POST --data ' + issue_json + ' -H "Content-Type: application/json" "' +self.jira_rest_api_url + 'issue/'
+		command_result = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0].strip().split("\n")
+		return command_result
 
 class GitControl:
     def __init__(self):
@@ -42,7 +56,6 @@ class GitControl:
         return content_result, issue_type[0:1].upper()+issue_type[1:].lower()
     def get_project(self):
         pass # FIXME
-
 
 # ---------------------------------------------------------- #
 
@@ -68,11 +81,12 @@ if my_name != '' and my_pass != '':
     # create issue
     jira_obj = JiraControl(my_name, my_pass)
     # Get issue with issue id
-	print jira_obj.query_issue('XXX-XXX')
+	#print jira_obj.query_issue('XXX-XXX')
 
 	# FIXME : ready for implement
-    create_issue_json_data = jira_obj.generate_create_issue_json(project, summary, description, issue_type)
-    print create_issue_json_data
+	issue_json_data = jira_obj.generate_create_issue_json(project, summary, description, issue_type)
+	print issue_json_data
+	#print jira_obj.create_issue(issue_json_data)
 else:
     print 'read config error'
 
