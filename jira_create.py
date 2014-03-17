@@ -12,13 +12,12 @@ class JiraDataJson:
     def add_key_value(self, key, value):
         return '"' + key + '" : ' + value
     def generate_create_issue_json(self, project, summary, description, issue_type):
-        pass
-#        project_json = add_key_value('project', add_braces(add_key_value('key', project)))
-#        summary_json = add_key_value('summary', summary)
-#        description_json = add_key_value('description', description)
-#        issuetype_json = add_key_value('issuetype', add_braces('name', issue_type))
-#        fields_json = add_braces(project_json+','+summary_json+','+description_json+','+issuetype_json)
-#        return add_braces(add_key_value('fields', fields_json))
+        project_json = self.add_key_value('project', self.add_braces(self.add_key_value('key', project)))
+        summary_json = self.add_key_value('summary', summary)
+        description_json = self.add_key_value('description', description)
+        issuetype_json = self.add_key_value('issuetype', self.add_key_value('name', issue_type))
+        fields_json = self.add_braces(project_json+','+summary_json+','+description_json+','+issuetype_json)
+        return self.add_braces(self.add_key_value('fields', fields_json))
 
 class JiraControl:
     def __init__(self, my_name = '', my_pass = '', my_jira_url = ''):
@@ -54,7 +53,7 @@ class GitControl:
         content_result = ''.join([i.strip()+' ' for i in command_result[6:n-1]])
         return content_result, issue_type[0:1].upper()+issue_type[1:].lower()
     def get_project(self):
-        pass # FIXME
+        return 'xxx' # FIXME
 
 # ---------------------------------------------------------- #
 
@@ -76,7 +75,7 @@ if my_name != '' and my_pass != '' and my_jira_url:
     # get data from git
     git_obj = GitControl()
     summary = git_obj.get_head_title()
-    description, issue_type = git_obj.get_head_content() or 1, 2
+    description, issue_type = git_obj.get_head_content()
     project = git_obj.get_project()
 
     # create issue
@@ -85,7 +84,7 @@ if my_name != '' and my_pass != '' and my_jira_url:
 	#print jira_obj.query_issue('XXX-XXX')
 
 	# FIXME : ready for implement
-    issue_json_data = JiraDataJson().generate_create_issue_json(project, summary, description, issue_type)
+    issue_json_data = JiraDataJson().generate_create_issue_json(project, summary, ''.join(description), ''.join(issue_type))
     print issue_json_data
 	#print jira_obj.create_issue(issue_json_data)
 else:
