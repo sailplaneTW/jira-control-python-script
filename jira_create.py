@@ -5,24 +5,25 @@ import os
 import subprocess
 
 class JiraDataJson:
-	def __init__(self):
-		pass
-	def add_braces(self, data):
-		return '{' + data + '}'
-	def add_key_value(self, key, value):
-		return '"' + key + '" : ' + value
-	def generate_create_issue_json(self, project, summary, description, issue_type):
-		project_json = add_key_value('project', add_braces(add_key_value('key', project)))
-		summary_json = add_key_value('summary', summary)
-		description_json = add_key_value('description', description)
-		issuetype_json = add_key_value('issuetype', add_braces('name', issue_type))
-		fields_json = add_braces(project_json+','+summary_json+','+description_json+','+issuetype_json)
-		return add_braces(add_key_value('fields', fields_json))
+    def __init__(self):
+        pass
+    def add_braces(self, data):
+        return '{' + data + '}'
+    def add_key_value(self, key, value):
+        return '"' + key + '" : ' + value
+    def generate_create_issue_json(self, project, summary, description, issue_type):
+        pass
+#        project_json = add_key_value('project', add_braces(add_key_value('key', project)))
+#        summary_json = add_key_value('summary', summary)
+#        description_json = add_key_value('description', description)
+#        issuetype_json = add_key_value('issuetype', add_braces('name', issue_type))
+#        fields_json = add_braces(project_json+','+summary_json+','+description_json+','+issuetype_json)
+#        return add_braces(add_key_value('fields', fields_json))
 
 class JiraControl:
-    def __init__(self, my_name = '', my_pass = ''):
+    def __init__(self, my_name = '', my_pass = '', my_jira_url = ''):
         self.username, self.password = my_name, my_pass
-        self.jira_rest_api_url = 'xxx' # set jira api url
+        self.jira_rest_api_url = my_jira_url
     def get_gira_issue_list(self):
         return ['bug', 'new feature', 'task', 'improvement']
     def query_issue(self, issue):
@@ -31,8 +32,6 @@ class JiraControl:
         command_result = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0].strip().split("\n")
         n = command_result.index('\r')
         return command_result[n+1:]
-	def generate_create_issue_json(self, project, summary, description, issue_type):
-		return JiraDataJson.generate_create_issue_json(project, summary, description, issue_type)
 	def create_issue(self, issue_json):
 		command = 'curl -D- -u ' + self.username + ':' + self.password + ' -X POST --data ' + issue_json + ' -H "Content-Type: application/json" "' +self.jira_rest_api_url + 'issue/'
 		command_result = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0].strip().split("\n")
@@ -59,33 +58,35 @@ class GitControl:
 
 # ---------------------------------------------------------- #
 
-my_name = my_pass = ''
-# read username/password from ~/.jira_account, and the contents are
+my_name = my_pass = my_jira_url = ''
+# read username/password from ~/.jira_script_env, and the contents are
 # User xxx
 # Password xxx
-with open(os.environ['HOME'] + '/.jira_account', 'r') as f :
+with open(os.environ['HOME'] + '/.jira_script_env', 'r') as f :
     for line in f:
         key, value = line.split(' ')
         if key == 'User' :
             my_name = value.strip()
         elif key == 'Password':
             my_pass = value.strip()
+        elif key == 'JiraApiUrl':
+            my_jira_url = value.strip()
 
-if my_name != '' and my_pass != '':
+if my_name != '' and my_pass != '' and my_jira_url:
     # get data from git
     git_obj = GitControl()
     summary = git_obj.get_head_title()
-    description, issue_type = git_obj.get_head_content()
+    description, issue_type = git_obj.get_head_content() or 1, 2
     project = git_obj.get_project()
 
     # create issue
-    jira_obj = JiraControl(my_name, my_pass)
+    jira_obj = JiraControl(my_name, my_pass, my_jira_url)
     # Get issue with issue id
 	#print jira_obj.query_issue('XXX-XXX')
 
 	# FIXME : ready for implement
-	issue_json_data = jira_obj.generate_create_issue_json(project, summary, description, issue_type)
-	print issue_json_data
+    issue_json_data = JiraDataJson().generate_create_issue_json(project, summary, description, issue_type)
+    print issue_json_data
 	#print jira_obj.create_issue(issue_json_data)
 else:
     print 'read config error'

@@ -4,7 +4,7 @@ This script is
  * manage source code by git
 
 Now it support
- * read user account and password from ~/.jira_account
+ * read user account, password and jira restfule api url from ~/.jira_script_env
  * query issue by issue id
  * (TODO) create issue
 
